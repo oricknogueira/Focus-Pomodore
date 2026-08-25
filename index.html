@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Focus — Pomodoro Dashboard</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span>Focus</span>
+      </div>
+
+      <div class="topbar-right">
+        <div class="level-pill" title="Seu nível">
+          <span class="level-icon">⚡</span>
+          <span id="levelLabel">Nível 1</span>
+        </div>
+        <div class="stars-pill" title="Estrelas conquistadas">
+          <span class="star-icon">★</span>
+          <span id="starsCount">0</span>
+        </div>
+        <button id="themeToggle" class="icon-btn" title="Alternar tema">🌙</button>
+        <button id="settingsBtn" class="icon-btn" title="Configurações">⚙️</button>
+      </div>
+    </header>
+
+    <main class="main-grid">
+
+      <!-- Timer Card -->
+      <section class="card timer-card">
+        <div class="mode-switch">
+          <button class="mode-btn active" data-mode="pomodoro">Foco</button>
+          <button class="mode-btn" data-mode="short">Pausa Curta</button>
+          <button class="mode-btn" data-mode="long">Pausa Longa</button>
+        </div>
+
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 240 240">
+            <circle class="ring-bg" cx="120" cy="120" r="108"></circle>
+            <circle id="ringProgress" class="ring-progress" cx="120" cy="120" r="108"></circle>
+          </svg>
+          <div class="ring-center">
+            <div id="clock" class="clock">25:00</div>
+            <div id="sessionLabel" class="session-label">Sessão de foco</div>
+          </div>
+        </div>
+
+        <div class="timer-controls">
+          <button id="resetBtn" class="ghost-btn" title="Reiniciar">↺</button>
+          <button id="startPauseBtn" class="primary-btn">Iniciar</button>
+          <button id="skipBtn" class="ghost-btn" title="Pular">⏭</button>
+        </div>
+      </section>
+
+      <!-- Stats Card -->
+      <section class="card stats-card">
+        <h2 class="card-title">Progresso</h2>
+
+        <div class="xp-bar-wrap">
+          <div class="xp-bar-top">
+            <span id="xpLevelLabel">Nível 1</span>
+            <span id="xpNumbers">0 / 100 XP</span>
+          </div>
+          <div class="xp-bar-track">
+            <div id="xpBarFill" class="xp-bar-fill"></div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="statToday">0</div>
+            <div class="stat-label">Pomodoros hoje</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Total de pomodoros</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statHours">0.0h</div>
+            <div class="stat-label">Horas focadas</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="statStreak">0</div>
+            <div class="stat-label">Sequência (dias)</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- History Card -->
+      <section class="card history-card">
+        <h2 class="card-title">Histórico recente</h2>
+        <ul id="historyList" class="history-list">
+          <li class="history-empty">Nenhuma sessão concluída ainda. Vamos começar? 🍅</li>
+        </ul>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Configurações</h3>
+        <button id="closeSettings" class="icon-btn">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field">
+          <span>Foco (minutos)</span>
+          <input type="number" id="inputPomodoro" min="1" max="180" value="25" />
+        </label>
+        <label class="field">
+          <span>Pausa curta (minutos)</span>
+          <input type="number" id="inputShort" min="1" max="60" value="5" />
+        </label>
+        <label class="field">
+          <span>Pausa longa (minutos)</span>
+          <input type="number" id="inputLong" min="1" max="120" value="15" />
+        </label>
+        <label class="field">
+          <span>Pomodoros até pausa longa</span>
+          <input type="number" id="inputLongInterval" min="2" max="12" value="4" />
+        </label>
+
+        <div class="field-row">
+          <label class="checkbox-field">
+            <input type="checkbox" id="inputSound" checked />
+            <span>Som ao finalizar sessão</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="resetProgressBtn" class="danger-btn">Zerar progresso</button>
+        <button id="saveSettingsBtn" class="primary-btn">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Level Up Toast -->
+  <div id="levelUpToast" class="toast hidden">
+    <span class="toast-icon">⚡</span>
+    <span id="toastText">Você subiu de nível!</span>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
