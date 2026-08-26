@@ -179,7 +179,10 @@ async function loginWithGoogle() {
     alert("Configuração do Supabase ainda não foi preenchida em js/config.js");
     return;
   }
-  await supabaseClient.auth.signInWithOAuth({ provider: "google" });
+  await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin + window.location.pathname },
+  });
 }
 
 async function logout() {
