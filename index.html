@@ -27,6 +27,16 @@
         </div>
         <button id="themeToggle" class="icon-btn" title="Alternar tema">🌙</button>
         <button id="settingsBtn" class="icon-btn" title="Configurações">⚙️</button>
+
+        <button id="loginBtn" class="login-btn">
+          <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="" class="google-icon" />
+          Entrar com Google
+        </button>
+
+        <button id="userMenuBtn" class="user-pill hidden">
+          <img id="userAvatar" class="user-avatar" src="" alt="" />
+          <span id="userName">Usuário</span>
+        </button>
       </div>
     </header>
 
@@ -150,6 +160,15 @@
     <span id="toastText">Você subiu de nível!</span>
   </div>
 
+  <!-- User Dropdown -->
+  <div id="userDropdown" class="user-dropdown hidden">
+    <div class="user-dropdown-name" id="userDropdownName">—</div>
+    <div class="user-dropdown-email" id="userDropdownEmail">—</div>
+    <button id="logoutBtn" class="danger-btn">Sair</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
   <script src="js/script.js"></script>
 </body>
 </html>

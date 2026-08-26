@@ -55,6 +55,7 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  queueCloudSync();
 }
 
 /* ---------------------------
@@ -97,7 +98,27 @@ const el = {
 
   levelUpToast: document.getElementById("levelUpToast"),
   toastText: document.getElementById("toastText"),
+
+  loginBtn: document.getElementById("loginBtn"),
+  userMenuBtn: document.getElementById("userMenuBtn"),
+  userAvatar: document.getElementById("userAvatar"),
+  userName: document.getElementById("userName"),
+  userDropdown: document.getElementById("userDropdown"),
+  userDropdownName: document.getElementById("userDropdownName"),
+  userDropdownEmail: document.getElementById("userDropdownEmail"),
+  logoutBtn: document.getElementById("logoutBtn"),
 };
+
+/* ---------------------------
+   SUPABASE (login + sync na nuvem)
+--------------------------- */
+let supabaseClient = null;
+let currentUser = null;
+let syncTimeout = null;
+
+if (window.supabase && typeof SUPABASE_URL === "string" && SUPABASE_URL.startsWith("https://")) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
 const MODE_LABELS = {
   pomodoro: "Sessão de foco",
@@ -116,6 +137,100 @@ function init() {
   renderHistory();
   bindEvents();
   syncStreakOnLoad();
+  initAuth();
+}
+
+/* ---------------------------
+   AUTH FLOW
+--------------------------- */
+async function initAuth() {
+  if (!supabaseClient) return; // config.js ainda não preenchido — segue só no localStorage
+
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  await handleAuthChange(sessionData.session);
+
+  supabaseClient.auth.onAuthStateChange((_event, session) => {
+    handleAuthChange(session);
+  });
+}
+
+async function handleAuthChange(session) {
+  currentUser = session?.user || null;
+
+  if (currentUser) {
+    el.loginBtn.classList.add("hidden");
+    el.userMenuBtn.classList.remove("hidden");
+    el.userAvatar.src = currentUser.user_metadata?.avatar_url || "";
+    const displayName = currentUser.user_metadata?.full_name || currentUser.email;
+    el.userName.textContent = displayName.split(" ")[0];
+    el.userDropdownName.textContent = displayName;
+    el.userDropdownEmail.textContent = currentUser.email;
+
+    await mergeRemoteProgress();
+  } else {
+    el.loginBtn.classList.remove("hidden");
+    el.userMenuBtn.classList.add("hidden");
+    el.userDropdown.classList.add("hidden");
+  }
+}
+
+async function loginWithGoogle() {
+  if (!supabaseClient) {
+    alert("Configuração do Supabase ainda não foi preenchida em js/config.js");
+    return;
+  }
+  await supabaseClient.auth.signInWithOAuth({ provider: "google" });
+}
+
+async function logout() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  el.userDropdown.classList.add("hidden");
+}
+
+/* Busca o progresso salvo na nuvem. Se existir, ele manda (fonte da verdade).
+   Se não existir ainda, sobe o progresso local atual para criar o registro. */
+async function mergeRemoteProgress() {
+  const { data: rows, error } = await supabaseClient
+    .from("progress")
+    .select("data")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Erro ao buscar progresso na nuvem:", error);
+    return;
+  }
+
+  if (rows?.data) {
+    const remoteTheme = data.theme; // mantém preferência de tema do dispositivo atual
+    data = { ...structuredClone(DEFAULT_DATA), ...rows.data, settings: { ...DEFAULT_SETTINGS, ...rows.data.settings } };
+    data.theme = remoteTheme;
+    applyTheme(data.theme);
+    saveData();
+    setMode(state.mode, { resetTimer: true });
+    renderStats();
+    renderHistory();
+  } else {
+    await pushProgressToCloud();
+  }
+}
+
+async function pushProgressToCloud() {
+  if (!supabaseClient || !currentUser) return;
+
+  const { error } = await supabaseClient
+    .from("progress")
+    .upsert({ user_id: currentUser.id, data, updated_at: new Date().toISOString() });
+
+  if (error) console.error("Erro ao salvar progresso na nuvem:", error);
+}
+
+/* Evita chamadas excessivas ao banco: agrupa salvamentos em uma única chamada */
+function queueCloudSync() {
+  if (!supabaseClient || !currentUser) return;
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(pushProgressToCloud, 1200);
 }
 
 function ringProgressSetup() {
@@ -456,6 +571,16 @@ function bindEvents() {
 
   el.settingsModal.addEventListener("click", (e) => {
     if (e.target === el.settingsModal) closeSettings();
+  });
+
+  el.loginBtn.addEventListener("click", loginWithGoogle);
+  el.userMenuBtn.addEventListener("click", () => el.userDropdown.classList.toggle("hidden"));
+  el.logoutBtn.addEventListener("click", logout);
+
+  document.addEventListener("click", (e) => {
+    if (!el.userDropdown.contains(e.target) && !el.userMenuBtn.contains(e.target)) {
+      el.userDropdown.classList.add("hidden");
+    }
   });
 }
 
